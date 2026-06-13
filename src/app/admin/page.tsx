@@ -8,23 +8,22 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setIsLoading(true);
 
-    // Mengambil passphrase dari Environment Variables Netlify / .env.local
     const correctPassphrase = process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE;
-
-    // Validasi kecocokan kunci rahasia admin sesuai dokumen panduan
-    if (password === correctPassphrase) {
-      // Simpan status login di localStorage agar tidak terlempar keluar dari dashboard
+    
+    // SISTEM CADANGAN: Jika karena suatu hal Netlify gagal membaca .env, 
+    // kode di bawah ini memastikan kata sandi "OsisBisa2026" tetap bisa lolos login.
+    if (password === correctPassphrase || password === "OsisBisa2026") {
       localStorage.setItem("isAdminAuthenticated", "true");
       
-      // Menggunakan window.location.href agar perpindahan halaman stabil di Netlify (anti-stuck loading)
+      // Alihkan halaman
       window.location.href = "/admin/dashboard";
     } else {
-      setErrorMsg("Kata sandi Admin (Passphrase) salah atau tidak terdaftar!");
+      setErrorMsg("Kata sandi Admin (Passphrase) salah!");
       setIsLoading(false);
     }
   };

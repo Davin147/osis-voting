@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase"; // Sesuaikan path folder client Supabase Anda
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
@@ -11,80 +10,71 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); // Mencegah reload halaman otomatis saat submit
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
     setErrorMsg("");
     setIsLoading(true);
 
-    try {
-      // 1. Proses autentikasi email dan password ke Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+    // Mengambil passphrase dari Environment Variables Netlify / .env.local
+    const correctPassphrase = process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE;
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // 2. Opsi tambahan jika login admin Anda dikunci menggunakan kata sandi statis .env.local
-      // Pastikan ADMIN_PASSPHRASE di .env.local diubah namanya jadi NEXT_PUBLIC_ADMIN_PASSPHRASE agar terbaca di sini
-      if (process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE) {
-        if (password !== process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE) {
-          throw new Error("Kata sandi admin tidak cocok dengan sistem!");
-        }
-      }
-
-      // Jika berhasil, arahkan admin masuk ke halaman dashboard voting
-      router.push("/admin/dashboard"); 
+    // Sesuai petunjuk dokumen: validasi kecocokan kunci rahasia admin
+    if (password === correctPassphrase) {
+      // Jika benar, simpan status login di localStorage agar tidak terlempar keluar
+      localStorage.setItem("isAdminAuthenticated", "true");
       
-    } catch (error: any) {
-      setErrorMsg(error.message || "Gagal masuk, periksa data Anda kembali.");
-    } finally {
+      // Arahkan ke halaman utama dashboard admin
+      router.push("/admin/dashboard");
+    } else {
+      setErrorMsg("Kata sandi Admin (Passphrase) salah atau tidak terdaftar!");
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-      {/* Membungkus input dengan form dan menambahkan onSubmit */}
-      <form onSubmit={handleLogin} className="w-full max-w-md p-6 border rounded-lg bg-white dark:bg-zinc-900 shadow-sm">
-        <h1 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-zinc-50">
-          Login Admin
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <form onSubmit={handleLogin} className="w-full max-w-md p-6 border rounded-lg bg-white shadow-sm">
+        <h1 className="text-2xl font-bold mb-4 text-gray-800">
+          Login Admin OSIS
         </h1>
 
-        {/* Tempat memunculkan pesan peringatan jika login gagal */}
+        {/* Notifikasi jika salah memasukkan kata sandi */}
         {errorMsg && (
-          <div className="p-3 mb-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
+          <div className="p-3 mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
             {errorMsg}
           </div>
         )}
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full border p-2 mb-3 rounded dark:bg-zinc-800 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            placeholder="admin@school.sch.id"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-black"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 mb-3 rounded dark:bg-zinc-800 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Passphrase Admin</label>
+          <input
+            type="password"
+            placeholder="Masukkan kata sandi dari dokumen"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-black"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
-        {/* Tombol diubah tipe datanya menjadi submit */}
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors disabled:bg-blue-400"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors disabled:bg-blue-300 font-semibold"
         >
-          {isLoading ? "Memproses..." : "Login"}
+          {isLoading ? "Membuka Dashboard..." : "Masuk Sebagai Admin"}
         </button>
       </form>
     </main>

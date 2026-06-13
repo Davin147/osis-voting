@@ -1,53 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-export default function AdminDashboardPage() {
-  const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
+export default function AdminLoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Mengecek apakah admin sudah login lewat localStorage
-    const isAuthenticated = localStorage.getItem("isAdminAuthenticated");
-    
-    if (isAuthenticated !== "true") {
-      // Jika belum login, tendang kembali ke halaman login admin
-      router.push("/admin");
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setIsLoading(true);
+
+    // Mengambil passphrase dari Environment Variables Netlify / .env.local
+    const correctPassphrase = process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE;
+
+    // Validasi kecocokan kunci rahasia admin sesuai dokumen panduan
+    if (password === correctPassphrase) {
+      // Simpan status login di localStorage agar tidak terlempar keluar dari dashboard
+      localStorage.setItem("isAdminAuthenticated", "true");
+      
+      // Menggunakan window.location.href agar perpindahan halaman stabil di Netlify (anti-stuck loading)
+      window.location.href = "/admin/dashboard";
     } else {
-      setAuthorized(true);
+      setErrorMsg("Kata sandi Admin (Passphrase) salah atau tidak terdaftar!");
+      setIsLoading(false);
     }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminAuthenticated");
-    router.push("/admin");
   };
 
-  if (!authorized) {
-    return <div className="p-8 text-center text-black">Memeriksa hak akses admin...</div>;
-  }
-
   return (
-    <main className="min-h-screen bg-gray-100 p-6 text-black">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard Admin Pemungutan Suara</h1>
-          <button 
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold transition-colors"
-          >
-            Keluar (Logout)
-          </button>
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <form onSubmit={handleLogin} className="w-full max-w-md p-6 border rounded-lg bg-white shadow-sm">
+        <h1 className="text-2xl font-bold mb-4 text-gray-800">
+          Login Admin OSIS
+        </h1>
+
+        {/* Notifikasi jika salah memasukkan kata sandi */}
+        {errorMsg && (
+          <div className="p-3 mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            {errorMsg}
+          </div>
+        )}
+
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            placeholder="admin@school.sch.id"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-black bg-white"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
-        
-        <p className="text-gray-600 mb-4">Selamat datang di panel admin! Di sini Anda dapat mengelola hasil voting OSIS.</p>
-        
-        {/* Tempat untuk menaruh grafik atau data Supabase Anda nantinya */}
-        <div className="border-2 border-dashed border-gray-200 rounded-lg h-48 flex items-center justify-center text-gray-400">
-          [ Grafik Hasil Voting dan Data Kandidat Akan Muncul di Sini ]
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Passphrase Admin</label>
+          <input
+            type="password"
+            placeholder="Masukkan kata sandi admin"
+            className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-black bg-white"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </div>
-      </div>
+
+        <button 
+          type="submit" 
+          disabled={isLoading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors disabled:bg-blue-400 font-semibold"
+        >
+          {isLoading ? "Membuka Dashboard..." : "Masuk Sebagai Admin"}
+        </button>
+      </form>
     </main>
   );
 }

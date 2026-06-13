@@ -1,64 +1,92 @@
 "use client";
- 
+
+import { useState } from "react";
+import { supabase } from "@/lib/supabase"; // Sesuaikan path folder client Supabase Anda
 import { useRouter } from "next/navigation";
-import { CheckCircle, ShieldCheck } from "lucide-react";
- 
-export default function SuccessPage() {
+
+export default function AdminLoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
- 
-  const handleExit = () => {
-    // router.replace menghapus riwayat halaman saat ini dari browser
-    // mencegah siswa menekan tombol 'Back' untuk kembali ke bilik suara
-    router.replace("/");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); // Mencegah reload halaman otomatis saat submit
+    setErrorMsg("");
+    setIsLoading(true);
+
+    try {
+      // 1. Proses autentikasi email dan password ke Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // 2. Opsi tambahan jika login admin Anda dikunci menggunakan kata sandi statis .env.local
+      // Pastikan ADMIN_PASSPHRASE di .env.local diubah namanya jadi NEXT_PUBLIC_ADMIN_PASSPHRASE agar terbaca di sini
+      if (process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE) {
+        if (password !== process.env.NEXT_PUBLIC_ADMIN_PASSPHRASE) {
+          throw new Error("Kata sandi admin tidak cocok dengan sistem!");
+        }
+      }
+
+      // Jika berhasil, arahkan admin masuk ke halaman dashboard voting
+      router.push("/admin/dashboard"); 
+      
+    } catch (error: any) {
+      setErrorMsg(error.message || "Gagal masuk, periksa data Anda kembali.");
+    } finally {
+      setIsLoading(false);
+    }
   };
- 
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden p-4">
-      {/* Dekorasi Latar Belakang Konsisten dengan Halaman Login */}
-      <div className="absolute top-0 left-0 w-125 h-125 bg-blue-100/40 rounded-full blur-3xl -translate-x-1/4 -translate-y-1/4 pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-150 h-150 bg-blue-50/60 rounded-full blur-3xl translate-x-1/4 translate-y-1/4 pointer-events-none"></div>
- 
-      {/* Glassmorphism Card */}
-      <div className="w-full max-w-sm bg-white/80 backdrop-blur-lg border border-white/40 shadow-xl shadow-blue-500/10 rounded-3xl p-8 text-center relative z-10 animate-in fade-in zoom-in duration-500">
-        {/* Ikon Sukses dengan Animasi */}
-        <div className="mx-auto w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 relative">
-          <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20"></div>
-          <CheckCircle className="w-12 h-12 relative z-10" />
-        </div>
- 
-        <h1 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">
-          Terima Kasih!
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
+      {/* Membungkus input dengan form dan menambahkan onSubmit */}
+      <form onSubmit={handleLogin} className="w-full max-w-md p-6 border rounded-lg bg-white dark:bg-zinc-900 shadow-sm">
+        <h1 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-zinc-50">
+          Login Admin
         </h1>
- 
-        <p className="text-sm text-slate-500 leading-relaxed mb-8">
-          Suara Anda telah berhasil dicatat secara rahasia dan aman di dalam
-          sistem.
-        </p>
- 
-        {/* Lencana Integritas (Nilai Karakter) */}
-        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-center gap-2 mb-8">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span className="text-xs font-medium text-slate-600">
-            Asas LUBER JURDIL Terlindungi
-          </span>
-        </div>
- 
-        {/* Tombol Keluar */}
-        <button
-          onClick={handleExit}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl active:scale-[0.98] transition-all duration-200 shadow-md shadow-blue-500/20"
+
+        {/* Tempat memunculkan pesan peringatan jika login gagal */}
+        {errorMsg && (
+          <div className="p-3 mb-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
+            {errorMsg}
+          </div>
+        )}
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border p-2 mb-3 rounded dark:bg-zinc-800 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full border p-2 mb-3 rounded dark:bg-zinc-800 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {/* Tombol diubah tipe datanya menjadi submit */}
+        <button 
+          type="submit" 
+          disabled={isLoading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition-colors disabled:bg-blue-400"
         >
-          Kembali ke Layar Utama
+          {isLoading ? "Memproses..." : "Login"}
         </button>
-      </div>
- 
-      {/* Footer Minimalis */}
-      <div className="absolute bottom-8 left-0 right-0 text-center z-10">
-        <p className="text-xs text-slate-400 font-medium">
-          &copy; 2026 KPU OSIS SMK Budi Bakti Ciwidey
-        </p>
-      </div>
+      </form>
     </main>
   );
 }
-

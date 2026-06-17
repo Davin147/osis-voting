@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
       setErrorMessage(result.error || "Gagal masuk.");
       setIsLoading(false);
     } else {
-      router.push("/admin/dashboard");
+      router.push("/admin/(Dashboard)/dashboard.tsx");
     }
   };
  
